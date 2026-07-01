@@ -1,4 +1,5 @@
 "use client"
+import { Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
@@ -40,7 +41,7 @@ function getPointOnPath(progress: number): { lat: number; lng: number } {
   }
 }
 
-export default function Carte() {
+function CarteInner() {
   const router = useRouter()
   const params = useSearchParams()
   const id = params.get("id")
@@ -88,22 +89,12 @@ export default function Carte() {
   const progression = Math.min(totalKm / DISTANCE_TOTALE, 1)
   const posActuelle = getPointOnPath(progression)
   const etapeActuelle = ETAPES[Math.min(Math.floor(progression * (ETAPES.length - 1)), ETAPES.length - 1)]
-
   const etapesSVG = ETAPES.map(e => latLngToSVG(e.lat, e.lng))
   const pathD = etapesSVG.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")
   const posActuelleSVG = latLngToSVG(posActuelle.lat, posActuelle.lng)
 
   return (
     <main style={{ minHeight: "100vh", background: "#0a0a0a", fontFamily: FONT, color: "#ffffff" }}>
-
-      <style>{`
-        @keyframes pulseRing {
-          0%, 100% { r: 8; opacity: 0.3; }
-          50% { r: 16; opacity: 0; }
-        }
-      `}</style>
-
-      {/* Header */}
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px 40px", borderBottom: "1px solid #1a1a1a" }}>
         <svg width="140" height="28" viewBox="0 0 140 28">
           <text y="22" fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif" fontSize="24" fontWeight="700" letterSpacing="0.2em">
@@ -122,7 +113,6 @@ export default function Carte() {
         </div>
       </header>
 
-      {/* Bandeau image */}
       <div style={{ position: "relative", height: "180px", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, backgroundImage: "url('https://images.unsplash.com/photo-1502224562085-639556652f33?w=1800&q=80')", backgroundSize: "cover", backgroundPosition: "center" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,10,10,0.3), rgba(10,10,10,0.95))" }} />
@@ -133,12 +123,10 @@ export default function Carte() {
       </div>
 
       <div style={{ maxWidth: "680px", margin: "0 auto", padding: "60px 40px" }}>
-
         {chargement ? (
           <p style={{ color: "#555", fontSize: "14px", textAlign: "center" }}>Chargement...</p>
         ) : (
           <>
-            {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "48px" }}>
               {[
                 { label: "Kilomètres", valeur: `${totalKm.toFixed(1)} km` },
@@ -152,7 +140,6 @@ export default function Carte() {
               ))}
             </div>
 
-            {/* Jauge */}
             <div style={{ marginBottom: "48px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <div>
@@ -166,14 +153,12 @@ export default function Carte() {
                 </p>
               </div>
 
-              {/* Barre */}
               <div style={{ position: "relative", height: "12px", background: "#1a1a1a", borderRadius: "6px", marginBottom: "20px" }}>
                 <div style={{
                   position: "absolute", left: 0, top: 0, bottom: 0,
                   width: `${progression * 100}%`,
                   background: "linear-gradient(to right, #0e9aa7, #4caf50, #d4f044)",
-                  borderRadius: "6px",
-                  transition: "width 0.8s ease",
+                  borderRadius: "6px", transition: "width 0.8s ease",
                   boxShadow: "0 0 12px rgba(212,240,68,0.3)",
                 }} />
                 {progression > 0 && (
@@ -184,13 +169,11 @@ export default function Carte() {
                     background: "#d4f044", borderRadius: "50%",
                     border: "3px solid #0a0a0a",
                     boxShadow: "0 0 0 3px rgba(212,240,68,0.3)",
-                    transition: "left 0.8s ease",
-                    zIndex: 2,
+                    transition: "left 0.8s ease", zIndex: 2,
                   }} />
                 )}
               </div>
 
-              {/* Étapes */}
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 {ETAPES.map((e, i) => {
                   const pos = i / (ETAPES.length - 1)
@@ -207,22 +190,16 @@ export default function Carte() {
               </div>
             </div>
 
-            {/* Carte statique + tracé SVG */}
             <div style={{ marginBottom: "48px" }}>
               <p style={{ fontSize: "11px", color: "#555", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "16px" }}>
                 Carte du trajet
               </p>
-
               <div style={{ position: "relative", borderRadius: "4px", overflow: "hidden", border: "1px solid #1a1a1a" }}>
-
-                {/* Carte statique */}
-<img
-  src={`https://maps.googleapis.com/maps/api/staticmap?center=49.0,5.2&zoom=6&size=640x420&maptype=roadmap&path=color:0x00000000|weight:3|45.748,4.847|47.322,5.041|48.692,6.184|49.611,6.132|50.633,5.567|50.846,4.352|51.221,4.400|52.370,4.895&key=VOTRE_CLE_API`}
-  alt="Carte Lyon Amsterdam"
-  style={{ width: "100%", height: "420px", objectFit: "cover", display: "block", filter: "invert(90%) hue-rotate(180deg) saturate(0.6) brightness(0.8)" }}
-/>
-
-                {/* Tracé SVG par dessus */}
+                <img
+                  src="https://staticmap.openstreetmap.de/staticmap.php?center=49.0,5.2&zoom=6&size=640x420&maptype=mapnik"
+                  alt="Carte Lyon Amsterdam"
+                  style={{ width: "100%", height: "420px", objectFit: "cover", display: "block", filter: "invert(90%) hue-rotate(180deg) saturate(0.6) brightness(0.8)" }}
+                />
                 <svg viewBox="0 0 640 420"
                   style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
                   <defs>
@@ -232,36 +209,25 @@ export default function Carte() {
                       <stop offset="100%" stopColor="#d4f044" />
                     </linearGradient>
                   </defs>
-
-                  {/* Tracé complet gris */}
                   <path d={pathD} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3" strokeDasharray="6 4" />
-
-                  {/* Tracé parcouru */}
                   {progression > 0 && (
                     <path
                       d={etapesSVG.slice(0, Math.min(Math.ceil(progression * (ETAPES.length - 1)) + 1, ETAPES.length)).map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")}
                       fill="none" stroke="url(#trailGrad)" strokeWidth="4" strokeLinecap="round"
                     />
                   )}
-
-                  {/* Points étapes */}
                   {etapesSVG.map((p, i) => {
                     const pos = i / (ETAPES.length - 1)
                     const passed = progression >= pos
                     return (
                       <g key={i}>
-                        <circle cx={p.x} cy={p.y} r="5"
-                          fill={passed ? "#d4f044" : "#333"}
-                          stroke={passed ? "#0a0a0a" : "#555"}
-                          strokeWidth="1.5" />
+                        <circle cx={p.x} cy={p.y} r="5" fill={passed ? "#d4f044" : "#333"} stroke={passed ? "#0a0a0a" : "#555"} strokeWidth="1.5" />
                         <text x={p.x + 8} y={p.y + 4} fill={passed ? "#d4f044" : "#666"} fontSize="9" fontFamily={FONT} fontWeight="700">
                           {ETAPES[i].nom}
                         </text>
                       </g>
                     )
                   })}
-
-                  {/* Position actuelle */}
                   {progression > 0 && (
                     <g>
                       <circle cx={posActuelleSVG.x} cy={posActuelleSVG.y} r="10" fill="#d4f044" opacity="0.2">
@@ -282,7 +248,6 @@ export default function Carte() {
               </p>
             </div>
 
-            {/* Message arrivée */}
             {progression >= 1 && (
               <div style={{ padding: "32px", border: "1px solid #d4f044", borderRadius: "2px", textAlign: "center" }}>
                 <p style={{ fontSize: "24px", marginBottom: "8px" }}>🎉</p>
@@ -295,5 +260,13 @@ export default function Carte() {
         )}
       </div>
     </main>
+  )
+}
+
+export default function Carte() {
+  return (
+    <Suspense fallback={<div style={{ background: "#0a0a0a", minHeight: "100vh" }} />}>
+      <CarteInner />
+    </Suspense>
   )
 }

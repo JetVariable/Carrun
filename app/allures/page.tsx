@@ -1,4 +1,7 @@
 "use client"
+
+export const dynamic = "force-dynamic";
+
 import { useRouter } from "next/navigation"
 
 const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif"
