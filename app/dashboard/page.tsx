@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useSearchParams, useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { supabase } from "@/lib/supabase"
 
 const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif"
@@ -80,7 +80,7 @@ const programmes: Record<string, { nom: string; semaines: { jour: string; seance
   },
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const params = useSearchParams()
   const router = useRouter()
   const id = params.get("id")
@@ -170,29 +170,29 @@ export default function Dashboard() {
         setRpe(updated)
       }
     } else {
-const { error } = await supabase.from("rpe").upsert({
-  coureur_id: id, semaine: semaineNum, seance_index: indexNum, valeur: value,
-}, { onConflict: "coureur_id,semaine,seance_index" })
+      const { error } = await supabase.from("rpe").upsert({
+        coureur_id: id, semaine: semaineNum, seance_index: indexNum, valeur: value,
+      }, { onConflict: "coureur_id,semaine,seance_index" })
       if (!error) setRpe({ ...rpe, [key]: value })
     }
   }
 
-const sauvegarderKilometres = async (key: string, kmVal: string, minVal: string) => {
-  const [semaineStr, indexStr] = key.split("_")
-  const payload = {
-    coureur_id: id,
-    semaine: parseInt(semaineStr),
-    seance_index: parseInt(indexStr),
-    km: parseFloat(kmVal) || null,
-    minutes: parseFloat(minVal) || null,
+  const sauvegarderKilometres = async (key: string, kmVal: string, minVal: string) => {
+    const [semaineStr, indexStr] = key.split("_")
+    const payload = {
+      coureur_id: id,
+      semaine: parseInt(semaineStr),
+      seance_index: parseInt(indexStr),
+      km: parseFloat(kmVal) || null,
+      minutes: parseFloat(minVal) || null,
+    }
+    console.log("Sauvegarde:", payload)
+    const { data, error } = await supabase
+      .from("kilometres")
+      .upsert(payload, { onConflict: "coureur_id,semaine,seance_index" })
+      .select()
+    console.log("Résultat:", data, "Erreur:", error)
   }
-  console.log("Sauvegarde:", payload)
-  const { data, error } = await supabase
-    .from("kilometres")
-    .upsert(payload, { onConflict: "coureur_id,semaine,seance_index" })
-    .select()
-  console.log("Résultat:", data, "Erreur:", error)
-}
 
   const setKmValue = (key: string, val: string) => {
     const newKm = { ...km, [key]: val }
@@ -489,5 +489,17 @@ const sauvegarderKilometres = async (key: string, kmVal: string, minVal: string)
         )}
       </div>
     </main>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <main style={{ minHeight: "100vh", background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
+        <p style={{ color: "#555", fontSize: "14px" }}>Chargement du tableau de bord...</p>
+      </main>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }

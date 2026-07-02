@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { supabase } from "@/lib/supabase"
 
 const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif"
@@ -25,7 +25,8 @@ function calculerAllures(vma: number) {
   ]
 }
 
-export default function Profil() {
+// 1. La logique et l'affichage sont déplacés dans ce sous-composant
+function ProfilContent() {
   const router = useRouter()
   const params = useSearchParams()
   const id = params.get("id")
@@ -273,5 +274,14 @@ export default function Profil() {
         )}
       </div>
     </main>
+  )
+}
+
+// 2. Export par défaut enveloppé dans Suspense
+export default function Profil() {
+  return (
+    <Suspense fallback={<p style={{ color: "#555", fontSize: "14px", textAlign: "center", padding: "60px" }}>Chargement du module...</p>}>
+      <ProfilContent />
+    </Suspense>
   )
 }
